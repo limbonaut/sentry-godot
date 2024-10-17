@@ -48,7 +48,7 @@ void ExperimentalLogger::_process_log_file() {
 
 	if (!log_file.is_open()) {
 		set_process(false);
-		ERR_FAIL_MSG("Sentry: Internal error: Log file not open.");
+		ERR_FAIL_MSG("Sentry: Internal error: Log file not open. Error logging stopped.");
 		return;
 	}
 
