@@ -153,10 +153,12 @@ void ExperimentalLogger::_notification(int p_what) {
 	}
 }
 
-void ExperimentalLogger::setup() {
+ExperimentalLogger::ExperimentalLogger() {
+	set_process(false);
+	process_log = callable_mp(this, &ExperimentalLogger::_process_log_file);
+
 	ERR_FAIL_NULL(ProjectSettings::get_singleton());
 	ERR_FAIL_NULL(OS::get_singleton());
-	process_log = callable_mp(this, &ExperimentalLogger::_process_log_file);
 
 	bool logging_setting = ProjectSettings::get_singleton()->get_setting("debug/file_logging/enable_file_logging");
 	bool logging_setting_pc = ProjectSettings::get_singleton()->get_setting("debug/file_logging/enable_file_logging.pc");
@@ -174,8 +176,4 @@ void ExperimentalLogger::setup() {
 	log_file.open(log_path.utf8(), std::ios::in);
 	set_process(log_file.is_open());
 	ERR_FAIL_COND_MSG(!log_file.is_open(), "Sentry: Error logger failure - couldn't open the log file: " + log_path);
-}
-
-ExperimentalLogger::ExperimentalLogger() {
-	set_process(false);
 }

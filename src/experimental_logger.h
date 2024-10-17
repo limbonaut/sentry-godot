@@ -29,7 +29,6 @@ protected:
 	void _notification(int p_what);
 
 public:
-	void setup();
 	ExperimentalLogger();
 };
 
