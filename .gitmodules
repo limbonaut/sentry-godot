@@ -1,3 +1,6 @@
 [submodule "sentry-native"]
 	path = sentry-native
 	url = https://github.com/getsentry/sentry-native.git
+[submodule "thirdparty/stduuid"]
+	path = thirdparty/stduuid
+	url = https://github.com/mariusbancila/stduuid

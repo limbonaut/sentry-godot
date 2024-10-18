@@ -108,6 +108,9 @@ elif env["platform"] == "linux":
         ]
     )
 
+# UUID library.
+env.Append(CPPPATH=["thirdparty/stduuid/", "thirdparty/stduuid/include"])
+
 # Source files to compile.
 sources = Glob("src/*.cpp")
 # To add subdirectories to compilation: sources += Glob("src/some_dir/*.cpp")
