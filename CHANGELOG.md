@@ -11,9 +11,9 @@
 
 ### Dependencies
 
-- Bump Native SDK from v0.7.17 to v0.7.19 ([#61](https://github.com/getsentry/sentry-godot/pull/61), [#63](https://github.com/getsentry/sentry-godot/pull/63))
-  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0719)
-  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.17...0.7.19)
+- Bump Native SDK from v0.7.17 to v0.7.20 ([#61](https://github.com/getsentry/sentry-godot/pull/61), [#63](https://github.com/getsentry/sentry-godot/pull/63), [#1](https://github.com/limbonaut/sentry-godot/pull/1))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0720)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.7.17...0.7.20)
 
 ## 0.0.3
 
