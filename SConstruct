@@ -18,9 +18,14 @@ BIN_DIR = "{project_dir}/addons/{extension_name}/bin".format(
 
 def run_cmd(**kwargs):
     """Run command in a subprocess and return its exit code."""
+    env_vars = os.environ.copy()
+    for k,v in kwargs.get("env_vars", {}).items():
+        env_vars[k] = v
+
     result = subprocess.run(
         kwargs["args"],
         check=True,
+        env=env_vars,
     )
     return result.returncode
 
@@ -189,12 +194,12 @@ if env["platform"] in ["linux", "macos", "windows"]:
         sn_targets.append(dest_dir + "/crashpad_handler.pdb")
     else:
         # TODO: macOS needs to use a different SDK.
-        defines = []
-        defines.append('-DCMAKE_C_FLAGS=\\"' + env.subst('$CCFLAGS') + '\\"')
-        defines.append('-DCMAKE_CXX_FLAGS=\\"' + env.subst('$CCFLAGS') + '\\"')
-        defines.append('-DCMAKE_STATIC_LINKER_FLAGS=\\"' + env.subst('$LINKFLAGS') + '\\"')
-        cmake_defines = 'CMAKE_DEFINES="' + ' '.join(defines) + '"'
-        print(cmake_defines)
+        # defines = []
+        # defines.append('-DCMAKE_CFLAGS="' + env.subst('$CCFLAGS') + '"')
+        # defines.append('-DCMAKE_CXX_FLAGS="' + env.subst('$CCFLAGS') + '"')
+        # defines.append('-DCMAKE_STATIC_LINKER_FLAGS="' + env.subst('$LINKFLAGS') + '"')
+        # cmake_args = ' '.join(defines)
+        # print("cmake_args: ", cmake_args)
 
         # cflags = 'CFLAGS="' + env.subst('$CCFLAGS') + '"'
         # cxxflags = 'CXXFLAGS="' + env.subst('$CCFLAGS') + '"'
@@ -203,10 +208,15 @@ if env["platform"] in ["linux", "macos", "windows"]:
         # print(cxxflags)
         # print(linkflags)
         build_actions.append(
-            partial(run_cmd, args=[
-                    'env', cmake_defines,
-                    'sh', 'scripts/build-sentry-native.sh'
-                ])
+            partial(run_cmd,
+                args=['sh', 'scripts/build-sentry-native.sh'],
+                env_vars={
+                        "CCFLAGS": env.subst('$CCFLAGS'),
+                        "LINKFLAGS": env.subst('$LINKFLAGS'),
+                        "CC": "gcc",
+                        "CXX": "g++",
+                },
+            )
         ),
         build_actions.append(
             Copy(
