@@ -1,5 +1,11 @@
 #!/bin/sh
 
+macos_deployment_target="14.0"
+
+if [ ! -z "$1" ]; then
+    macos_deployment_target=$1
+fi
+
 cd modules/sentry-native
 cmake -B build -DSENTRY_BUILD_SHARED_LIBS=OFF -DSENTRY_BACKEND=crashpad -DSENTRY_SDK_NAME="sentry.native.godot" -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build --target sentry --parallel --config RelWithDebInfo
