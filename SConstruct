@@ -189,8 +189,24 @@ if env["platform"] in ["linux", "macos", "windows"]:
         sn_targets.append(dest_dir + "/crashpad_handler.pdb")
     else:
         # TODO: macOS needs to use a different SDK.
+        defines = []
+        defines.append('-DCMAKE_C_FLAGS=\\"' + env.subst('$CCFLAGS') + '\\"')
+        defines.append('-DCMAKE_CXX_FLAGS=\\"' + env.subst('$CCFLAGS') + '\\"')
+        defines.append('-DCMAKE_STATIC_LINKER_FLAGS=\\"' + env.subst('$LINKFLAGS') + '\\"')
+        cmake_defines = 'CMAKE_DEFINES="' + ' '.join(defines) + '"'
+        print(cmake_defines)
+
+        # cflags = 'CFLAGS="' + env.subst('$CCFLAGS') + '"'
+        # cxxflags = 'CXXFLAGS="' + env.subst('$CCFLAGS') + '"'
+        # linkflags = 'CMAKE_STATIC_LINKER_FLAGS="' + env.subst('$LINKFLAGS') + '"'
+        # print(cflags)
+        # print(cxxflags)
+        # print(linkflags)
         build_actions.append(
-            partial(run_cmd, args=["sh", "scripts/build-sentry-native.sh", "-mmacosx-version-min", env["macos_deployment_target"]])
+            partial(run_cmd, args=[
+                    'env', cmake_defines,
+                    'sh', 'scripts/build-sentry-native.sh'
+                ])
         ),
         build_actions.append(
             Copy(
