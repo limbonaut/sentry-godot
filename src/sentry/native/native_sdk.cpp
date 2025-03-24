@@ -16,7 +16,7 @@
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
-#define _SCREENSHOT_FN "screenshot.png"
+#define _SCREENSHOT_FN "screenshot.jpg"
 
 namespace {
 
@@ -64,6 +64,7 @@ inline void _save_screenshot() {
 	PackedByteArray buffer = sentry::util::take_screenshot();
 	Ref<FileAccess> f = FileAccess::open(screenshot_path, FileAccess::WRITE);
 	f->store_buffer(buffer);
+	f->flush();
 	f->close();
 }
 
@@ -78,7 +79,11 @@ inline void _inject_contexts(sentry_value_t p_event) {
 
 sentry_value_t _handle_before_send(sentry_value_t event, void *hint, void *closure) {
 	sentry::util::print_debug("handling before_send");
-	_save_screenshot();
+
+	// Note: Saving image from the root viewport is too slow: ~20 ms for JPG, 40 ms for PNG.
+	// Until we have a better solution, we can't use it for non-crash events.
+	// _save_screenshot();
+
 	_inject_contexts(event);
 	if (const Callable &before_send = SentryOptions::get_singleton()->get_before_send(); before_send.is_valid()) {
 		Ref<NativeEvent> event_obj = memnew(NativeEvent(event));
