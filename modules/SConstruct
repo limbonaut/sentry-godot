@@ -174,7 +174,7 @@ Default(sentry_native)
 Clean(sentry_native, [Dir("sentry-native/build"), Dir("sentry-native/install")])
 
 
-## *** Chapter 4: Export action to copy crashpad handler
+## *** Chapter 4: Export pseudo-builder to copy crashpad handler
 
 def CopyCrashpadHandler(self, target_dir):
     actions = []
@@ -205,7 +205,7 @@ def CopyCrashpadHandler(self, target_dir):
 
     return env.Command(targets, sources, actions)
 
-# Register action
-env.__class__.CopyCrashpadHandler = CopyCrashpadHandler
+env.AddMethod(CopyCrashpadHandler, "CopyCrashpadHandler")
+
 
 Return("env")

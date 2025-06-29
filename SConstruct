@@ -4,21 +4,13 @@ import sys
 import subprocess
 from functools import partial
 
-# *** Setting.
+
+# *** Settings.
 
 VERSION = "0.6.1"
 COMPATIBILITY_MINIMUM = "4.4"
 
 BIN_DIR = "project/addons/sentry/bin"
-
-
-def run_cmd(**kwargs):
-    """Run command in a subprocess and return its exit code."""
-    result = subprocess.run(
-        kwargs["args"],
-        check=True,
-    )
-    return result.returncode
 
 
 # *** Generate version header.
@@ -55,9 +47,9 @@ env = SConscript("modules/godot-cpp/SConstruct")
 
 platform = env["platform"] 
 
+
 # *** Build sentry-native.
 
-# Include sentry-native libs (static).
 if platform in ["linux", "macos", "windows"]:
     # Build sentry-native.
     env = SConscript("modules/SConstruct", exports=["env"])
@@ -78,14 +70,15 @@ sources = Glob("src/*.cpp")
 sources += Glob("src/editor/*.cpp")
 sources += Glob("src/sentry/*.cpp")
 sources += Glob("src/sentry/util/*.cpp")
-# Compile sentry-native code only on respective platforms.
-if env["platform"] in ["linux", "windows", "macos"]:
+
+# Platform-specific sources.
+if platform in ["linux", "windows", "macos"]:
     sources += Glob("src/sentry/native/*.cpp")
-elif env["platform"] == "android":
+elif platform == "android":
     sources += Glob("src/sentry/android/*.cpp")
 
 # Generate documentation data.
-if env["target"] in ["editor", "template_debug"]:
+if platform in ["editor", "template_debug"]:
     try:
         doc_data = env.GodotCPPDocData(
             "src/gen/doc_data.gen.cpp", source=Glob("doc_classes/*.xml"))
@@ -95,7 +88,7 @@ if env["target"] in ["editor", "template_debug"]:
 
 build_type = "release" if env["target"] == "template_release" else "debug"
 
-if env["platform"] == "macos":
+if platform == "macos":
     library = env.SharedLibrary(
         "{bin}/{platform}/libsentry.{platform}.{build_type}.framework/libsentry.{platform}.{build_type}".format(
             bin=BIN_DIR,
@@ -142,7 +135,7 @@ def symlink(target, source, env):
     assert len(source) == 1
     dst = str(target[0])
     src = str(source[0])
-    if env["platform"] == "windows":
+    if platform == "windows":
         # Create NTFS junction.
         # Note: Windows requires elevated privileges to create symlinks, so we're creating NTFS junction instead.
         try:
