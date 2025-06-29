@@ -3,13 +3,14 @@
 
 import os
 
+
+# *** Prologue: Initialization 
+
 try:
     Import("env")
     env = env.Clone()
 except:
     env = Environment(ENV = os.environ)
-
-env_cmake = Environment(ENV = os.environ)
 
 # Get platform and architecture from environment or command line arguments
 platform = env.get("platform", ARGUMENTS.get("platform", ""))
@@ -24,7 +25,7 @@ if not arch:
     Exit(1)
 
 if platform not in ["windows", "linux", "macos"]:
-    Return()
+    Return("env")
 
 if env.get("use_mingw") == True:
     print("ERROR: Compiling with MinGW is not supported yet.")
@@ -34,23 +35,75 @@ if env.get("use_llvm") == True:
     print("ERROR: Compiling with LLVM is not supported yet.")
     Exit(1)
 
+
+# *** Chapter 1: Targets and variables
+
+build_targets = []
+
+def add_lib_target(lib_name):
+    if platform == "windows":
+        build_targets.append(File(f"sentry-native/install/lib/{lib_name}.lib"))
+        build_targets.append(File(f"sentry-native/install/lib/{lib_name}.pdb"))
+    else:
+        build_targets.append(File(f"sentry-native/install/lib/lib{lib_name}.a"))
+    env.Append(LIBS=[lib_name])
+
+# Common libs
+add_lib_target("sentry")
+add_lib_target("crashpad_client")
+add_lib_target("crashpad_handler_lib")
+add_lib_target("crashpad_minidump")
+add_lib_target("crashpad_snapshot")
+add_lib_target("crashpad_tools")
+add_lib_target("crashpad_util")
+add_lib_target("mini_chromium")
+
+# Platform-specific libs
+if platform == "windows":
+    add_lib_target("crashpad_compat")
+    env.Append(
+        LIBS=[
+            "winhttp",
+            "advapi32",
+            "DbgHelp",
+            "Version",
+        ]
+    )
+elif platform == "linux":
+    add_lib_target("crashpad_compat")
+    env.Append(
+        LIBS=[
+            "curl",
+            "atomic"
+        ]
+    )
+elif platform == "macos":
+    env.Append(
+        LIBS=[
+            "curl",
+        ]
+    )
+
+# Crashpad handler
+if platform == "windows":
+    build_targets.append(File(f"sentry-native/install/bin/crashpad_handler.exe"))
+else:
+    build_targets.append(File(f"sentry-native/install/bin/crashpad_handler"))
+
+# Other defines
+env.Append(CPPDEFINES=["SENTRY_BUILD_STATIC", "NATIVE_SDK"])
+env.Append(CPPPATH=[Dir("sentry-native/include/")])
+env.Append(LIBPATH=[Dir("sentry-native/install/lib/")])
+
+
+# *** Chapter 2: CMake
+
 cmake_gen = "cmake -B build"
 cmake_gen += " -DSENTRY_BUILD_SHARED_LIBS=OFF"
 cmake_gen += " -DSENTRY_BACKEND=crashpad"
 cmake_gen += " -DSENTRY_SDK_NAME=\"sentry.native.godot\""
 cmake_gen += " -DCMAKE_BUILD_TYPE=RelWithDebInfo"
 
-build_targets = []
-
-# Define our build targets for the command
-if platform == "windows":
-    build_targets.append(File("sentry-native/install/lib/sentry.lib"))
-    build_targets.append(File("sentry-native/install/bin/crashpad_handler.exe"))
-else:
-    build_targets.append(File("sentry-native/install/lib/libsentry.a"))
-    build_targets.append(File("sentry-native/install/bin/crashpad_handler"))
-
-# Platform-specific options
 if platform == "windows":
     cmake_gen += " -DSENTRY_BUILD_RUNTIMESTATIC=ON"
     cmake_gen += ' -DCMAKE_COMPILE_PDB_OUTPUT_DIRECTORY="pdb"'
@@ -81,21 +134,28 @@ cmake_sentry = "cmake --build build --target sentry --parallel --config RelWithD
 cmake_crashpad = "cmake --build build --target crashpad_handler --parallel --config RelWithDebInfo"
 cmake_install = "cmake --install build --prefix install --config RelWithDebInfo"
 
-sentry_native_dir = Dir('sentry-native').abspath
+
+## *** Chapter 3: Build Commands
+
+env_cmake = Environment(ENV = os.environ)
+sentry_native_path = Dir('sentry-native').abspath
 
 sentry_native = env_cmake.Command(
     target=build_targets,
     source=[Dir("sentry-native/src")],
     action=[
-        f"cd {sentry_native_dir} && {cmake_gen}",
-        f"cd {sentry_native_dir} && {cmake_sentry}",
-        f"cd {sentry_native_dir} && {cmake_crashpad}",
-        f"cd {sentry_native_dir} && {cmake_install}",
+        f"cd {sentry_native_path} && {cmake_gen}",
+        f"cd {sentry_native_path} && {cmake_sentry}",
+        f"cd {sentry_native_path} && {cmake_crashpad}",
+        f"cd {sentry_native_path} && {cmake_install}",
     ]
 )
 
 # Force sentry-native to be built sequential to godot-cpp (not in parallel)
 Depends(sentry_native, "godot-cpp")
+
 Default(sentry_native)
 
 Clean(sentry_native, [Dir("sentry-native/build"), Dir("sentry-native/install")])
+
+Return("env")

@@ -118,55 +118,55 @@ env.Append(CPPPATH=["src/"])
 
 # Include sentry-native libs (static).
 if env["platform"] in ["linux", "macos", "windows"]:
-    env.Append(CPPDEFINES=["SENTRY_BUILD_STATIC", "NATIVE_SDK"])
-    env.Append(CPPPATH=["modules/sentry-native/include"])
-    env.Append(LIBPATH=["modules/sentry-native/install/lib/"])
+    # env.Append(CPPDEFINES=["SENTRY_BUILD_STATIC", "NATIVE_SDK"])
+    # env.Append(CPPPATH=["modules/sentry-native/include"])
+    # env.Append(LIBPATH=["modules/sentry-native/install/lib/"])
 
-    sn_targets = []
-    sn_sources = ["modules/sentry-native/src/"]
+    # sn_targets = []
+    # sn_sources = ["modules/sentry-native/src/"]
 
-    def add_target(lib_name):
-        env.Append(LIBS=[lib_name])
-        if env["platform"] == "windows":
-            sn_targets.append("modules/sentry-native/install/lib/" + lib_name + ".lib")
-            sn_targets.append("modules/sentry-native/install/lib/" + lib_name + ".pdb")
-        else:
-            sn_targets.append("modules/sentry-native/install/lib/lib" + lib_name + ".a")
+    # def add_target(lib_name):
+    #     env.Append(LIBS=[lib_name])
+    #     if env["platform"] == "windows":
+    #         sn_targets.append("modules/sentry-native/install/lib/" + lib_name + ".lib")
+    #         sn_targets.append("modules/sentry-native/install/lib/" + lib_name + ".pdb")
+    #     else:
+    #         sn_targets.append("modules/sentry-native/install/lib/lib" + lib_name + ".a")
 
-    add_target("sentry")
-    add_target("crashpad_client")
-    add_target("crashpad_handler_lib")
-    add_target("crashpad_minidump")
-    add_target("crashpad_snapshot")
-    add_target("crashpad_tools")
-    add_target("crashpad_util")
-    add_target("mini_chromium")
+    # add_target("sentry")
+    # add_target("crashpad_client")
+    # add_target("crashpad_handler_lib")
+    # add_target("crashpad_minidump")
+    # add_target("crashpad_snapshot")
+    # add_target("crashpad_tools")
+    # add_target("crashpad_util")
+    # add_target("mini_chromium")
 
-    # Include additional platform-specific libs.
-    if env["platform"] == "windows":
-        add_target("crashpad_compat")
-        env.Append(
-            LIBS=[
-                "winhttp",
-                "advapi32",
-                "DbgHelp",
-                "Version",
-            ]
-        )
-    elif env["platform"] == "linux":
-        add_target("crashpad_compat")
-        env.Append(
-            LIBS=[
-                "curl",
-                "atomic"
-            ]
-        )
-    elif env["platform"] == "macos":
-        env.Append(
-            LIBS=[
-                "curl",
-            ]
-        )
+    # # Include additional platform-specific libs.
+    # if env["platform"] == "windows":
+    #     add_target("crashpad_compat")
+    #     env.Append(
+    #         LIBS=[
+    #             "winhttp",
+    #             "advapi32",
+    #             "DbgHelp",
+    #             "Version",
+    #         ]
+    #     )
+    # elif env["platform"] == "linux":
+    #     add_target("crashpad_compat")
+    #     env.Append(
+    #         LIBS=[
+    #             "curl",
+    #             "atomic"
+    #         ]
+    #     )
+    # elif env["platform"] == "macos":
+    #     env.Append(
+    #         LIBS=[
+    #             "curl",
+    #         ]
+    #     )
 
     build_actions = []
     dest_dir = BIN_DIR + "/" + env["platform"]
@@ -177,18 +177,18 @@ if env["platform"] in ["linux", "macos", "windows"]:
         # ),
         build_actions.append(
             Copy(
-                dest_dir + "/crashpad_handler.exe",
-                "modules/sentry-native/install/bin/crashpad_handler.exe",
+                env.File(f"{dest_dir}/crashpad_handler.exe"),
+                env.File("modules/sentry-native/install/bin/crashpad_handler.exe"),
             )
         )
         build_actions.append(
             Copy(
-                dest_dir + "/crashpad_handler.pdb",
-                "modules/sentry-native/install/bin/crashpad_handler.pdb",
+                env.File(f"{dest_dir}/crashpad_handler.pdb"),
+                env.File("modules/sentry-native/install/bin/crashpad_handler.pdb"),
             )
         )
-        sn_targets.append(dest_dir + "/crashpad_handler.exe")
-        sn_targets.append(dest_dir + "/crashpad_handler.pdb")
+        # sn_targets.append(dest_dir + "/crashpad_handler.exe")
+        # sn_targets.append(dest_dir + "/crashpad_handler.pdb")
     else:
         # TODO: macOS needs to use a different SDK.
         # build_actions.append(
@@ -203,7 +203,7 @@ if env["platform"] in ["linux", "macos", "windows"]:
                 "modules/sentry-native/install/bin/crashpad_handler",
             )
         )
-        sn_targets.append(dest_dir + "/crashpad_handler")
+        # sn_targets.append(dest_dir + "/crashpad_handler")
 
     # sentry_native = env.Command(sn_targets, sn_sources, build_actions)
 
@@ -214,7 +214,7 @@ if env["platform"] in ["linux", "macos", "windows"]:
     # Clean(sentry_native, ["modules/sentry-native/build", "modules/sentry-native/install"])
 
 # Build sentry-native
-SConscript("modules/SConstruct", exports=["env"])
+env = SConscript("modules/SConstruct", exports=["env"])
 
 
 # *** Build GDExtension library.
