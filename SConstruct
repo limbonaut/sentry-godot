@@ -53,168 +53,45 @@ with open("src/gen/sdk_version.gen.h", "w") as f:
 print("Reading godot-cpp build configuration...")
 env = SConscript("modules/godot-cpp/SConstruct")
 
+platform = env["platform"] 
 
 # *** Build sentry-native.
 
-# Sentry-native is now built via modules/SConstruct
-# TODO: macOS needs to use a different SDK.
-# if env["platform"] in ["linux", "macos"]:
-
-#     def build_sentry_native(target, source, env):
-#         result = subprocess.run(
-#             ["sh", "scripts/build-sentry-native.sh"],
-#             check=True,
-#         )
-#         return result.returncode
-
-#     crashpad_handler_target = "{bin}/{platform}/crashpad_handler".format(
-#         bin=BIN_DIR,
-#         platform=env["platform"]
-#     )
-#     sentry_native = env.Command(
-#         [
-#             "modules/sentry-native/install/lib/libsentry.a",
-#             crashpad_handler_target,
-#         ],
-#         ["modules/sentry-native/src"],
-#         [
-#             build_sentry_native,
-#             Copy(
-#                 crashpad_handler_target,
-#                 "modules/sentry-native/install/bin/crashpad_handler",
-#             ),
-#         ],
-#     )
-# elif env["platform"] == "windows":
-
-#     def build_sentry_native(target, source, env):
-#         result = subprocess.run(
-#             ["powershell", "scripts/build-sentry-native.ps1"],
-#             check=True,
-#         )
-#         return result.returncode
-
-#     sentry_native = env.Command(
-#         ["modules/sentry-native/install/lib/sentry.lib",
-#             BIN_DIR + "/windows/crashpad_handler.exe"],
-#         ["modules/sentry-native/src/"],
-#         [
-#             build_sentry_native,
-#             Copy(
-#                 BIN_DIR + "/windows/crashpad_handler.exe",
-#                 "modules/sentry-native/install/bin/crashpad_handler.exe",
-#             ),
-#         ],
-#     )
-
-# if env["platform"] in ["linux", "macos", "windows"]:
-#     # Force sentry-native to be built sequential to godot-cpp (not in parallel)
-#     Depends(sentry_native, "modules/godot-cpp")
-#     Default(sentry_native)
-#     Clean(sentry_native, ["modules/sentry-native/build", "modules/sentry-native/install"])
-
-# Include relative to project source root.
-env.Append(CPPPATH=["src/"])
-
 # Include sentry-native libs (static).
-if env["platform"] in ["linux", "macos", "windows"]:
-    # env.Append(CPPDEFINES=["SENTRY_BUILD_STATIC", "NATIVE_SDK"])
-    # env.Append(CPPPATH=["modules/sentry-native/include"])
-    # env.Append(LIBPATH=["modules/sentry-native/install/lib/"])
+if platform in ["linux", "macos", "windows"]:
+    # Build sentry-native.
+    env = SConscript("modules/SConstruct", exports=["env"])
 
-    # sn_targets = []
-    # sn_sources = ["modules/sentry-native/src/"]
+    # Copy crashpad handler to project directory.
+    sn_actions = []
+    sn_targets = []
+    sn_sources = []
 
-    # def add_target(lib_name):
-    #     env.Append(LIBS=[lib_name])
-    #     if env["platform"] == "windows":
-    #         sn_targets.append("modules/sentry-native/install/lib/" + lib_name + ".lib")
-    #         sn_targets.append("modules/sentry-native/install/lib/" + lib_name + ".pdb")
-    #     else:
-    #         sn_targets.append("modules/sentry-native/install/lib/lib" + lib_name + ".a")
+    def copy_file_action(target_file, source_file):
+        sn_actions.append(Copy(target_file, source_file))
+        sn_targets.append(target_file)
+        sn_sources.append(source_file)
 
-    # add_target("sentry")
-    # add_target("crashpad_client")
-    # add_target("crashpad_handler_lib")
-    # add_target("crashpad_minidump")
-    # add_target("crashpad_snapshot")
-    # add_target("crashpad_tools")
-    # add_target("crashpad_util")
-    # add_target("mini_chromium")
+    target_dir = BIN_DIR + "/" + env["platform"]
+    source_dir = "modules/sentry-native/install/bin"
 
-    # # Include additional platform-specific libs.
-    # if env["platform"] == "windows":
-    #     add_target("crashpad_compat")
-    #     env.Append(
-    #         LIBS=[
-    #             "winhttp",
-    #             "advapi32",
-    #             "DbgHelp",
-    #             "Version",
-    #         ]
-    #     )
-    # elif env["platform"] == "linux":
-    #     add_target("crashpad_compat")
-    #     env.Append(
-    #         LIBS=[
-    #             "curl",
-    #             "atomic"
-    #         ]
-    #     )
-    # elif env["platform"] == "macos":
-    #     env.Append(
-    #         LIBS=[
-    #             "curl",
-    #         ]
-    #     )
-
-    build_actions = []
-    dest_dir = BIN_DIR + "/" + env["platform"]
-
-    if env["platform"] == "windows":
-        # build_actions.append(
-        #     partial(run_cmd, args=["powershell", "scripts/build-sentry-native.ps1"])
-        # ),
-        build_actions.append(
-            Copy(
-                env.File(f"{dest_dir}/crashpad_handler.exe"),
-                env.File("modules/sentry-native/install/bin/crashpad_handler.exe"),
-            )
+    if platform == "windows":
+        copy_file_action(
+            File(f"{target_dir}/crashpad_handler.exe"),
+            File(f"{source_dir}/crashpad_handler.exe")
         )
-        build_actions.append(
-            Copy(
-                env.File(f"{dest_dir}/crashpad_handler.pdb"),
-                env.File("modules/sentry-native/install/bin/crashpad_handler.pdb"),
-            )
+        copy_file_action(
+            File(f"{target_dir}/crashpad_handler.pdb"),
+            File(f"{source_dir}/crashpad_handler.pdb")
         )
-        # sn_targets.append(dest_dir + "/crashpad_handler.exe")
-        # sn_targets.append(dest_dir + "/crashpad_handler.pdb")
     else:
-        # TODO: macOS needs to use a different SDK.
-        # build_actions.append(
-        #     partial(run_cmd, args=[
-        #         "sh", "scripts/build-sentry-native.sh",
-        #         "--macos-deployment-target", env["macos_deployment_target"]
-        #     ])
-        # ),
-        build_actions.append(
-            Copy(
-                dest_dir + "/crashpad_handler",
-                "modules/sentry-native/install/bin/crashpad_handler",
-            )
+        copy_file_action(
+            File(f"{target_dir}/crashpad_handler"),
+            File(f"{source_dir}/crashpad_handler")
         )
-        # sn_targets.append(dest_dir + "/crashpad_handler")
 
-    # sentry_native = env.Command(sn_targets, sn_sources, build_actions)
-
-    # Force sentry-native to be built sequential to godot-cpp (not in parallel).
-    # Depends(sentry_native, "modules/godot-cpp")
-
-    # Default(sentry_native)
-    # Clean(sentry_native, ["modules/sentry-native/build", "modules/sentry-native/install"])
-
-# Build sentry-native
-env = SConscript("modules/SConstruct", exports=["env"])
+    deploy_crashpad_handler = env.Command(sn_targets, sn_sources, sn_actions)
+    Default(deploy_crashpad_handler)
 
 
 # *** Build GDExtension library.

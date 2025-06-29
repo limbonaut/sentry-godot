@@ -137,18 +137,33 @@ cmake_install = "cmake --install build --prefix install --config RelWithDebInfo"
 
 ## *** Chapter 3: Build Commands
 
-env_cmake = Environment(ENV = os.environ)
 sentry_native_path = Dir('sentry-native').abspath
 
-sentry_native = env_cmake.Command(
-    target=build_targets,
-    source=[Dir("sentry-native/src")],
-    action=[
+actions = [
         f"cd {sentry_native_path} && {cmake_gen}",
         f"cd {sentry_native_path} && {cmake_sentry}",
         f"cd {sentry_native_path} && {cmake_crashpad}",
         f"cd {sentry_native_path} && {cmake_install}",
     ]
+
+# Copy crashpad handler PDB
+if platform == "windows":
+    target_file = File("sentry-native/install/bin/crashpad_handler.pdb")
+    actions.append(
+        Copy(
+            target_file,
+            File("sentry-native/build/crashpad_build/handler/RelWithDebInfo/crashpad_handler.pdb")
+        )
+    )
+    build_targets.append(target_file)
+
+# Use new environment importing current shell's env for greater compatibility.
+env_cmake = Environment(ENV = os.environ)
+
+sentry_native = env_cmake.Command(
+    target=build_targets,
+    source=[Dir("sentry-native/src")],
+    action=actions
 )
 
 # Force sentry-native to be built sequential to godot-cpp (not in parallel)
