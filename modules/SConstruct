@@ -173,4 +173,39 @@ Default(sentry_native)
 
 Clean(sentry_native, [Dir("sentry-native/build"), Dir("sentry-native/install")])
 
+
+## *** Chapter 4: Export action to copy crashpad handler
+
+def CopyCrashpadHandler(self, target_dir):
+    actions = []
+    targets = []
+    sources = []
+
+    def copy_file_action(target_file, source_file):
+        actions.append(Copy(target_file, source_file))
+        targets.append(target_file)
+        sources.append(source_file)
+
+    source_dir = Dir("modules/sentry-native/install/bin")
+
+    if platform == "windows":
+        copy_file_action(
+            target_dir.File("crashpad_handler.exe"),
+            source_dir.File("crashpad_handler.exe")
+        )
+        copy_file_action(
+            target_dir.File("crashpad_handler.pdb"),
+            source_dir.File("crashpad_handler.pdb")
+        )
+    else:
+        copy_file_action(
+            target_dir.File("crashpad_handler"),
+            source_dir.File("crashpad_handler")
+        )
+
+    return env.Command(targets, sources, actions)
+
+# Register action
+env.__class__.CopyCrashpadHandler = CopyCrashpadHandler
+
 Return("env")

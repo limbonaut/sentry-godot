@@ -62,35 +62,9 @@ if platform in ["linux", "macos", "windows"]:
     # Build sentry-native.
     env = SConscript("modules/SConstruct", exports=["env"])
 
-    # Copy crashpad handler to project directory.
-    sn_actions = []
-    sn_targets = []
-    sn_sources = []
-
-    def copy_file_action(target_file, source_file):
-        sn_actions.append(Copy(target_file, source_file))
-        sn_targets.append(target_file)
-        sn_sources.append(source_file)
-
-    target_dir = BIN_DIR + "/" + env["platform"]
-    source_dir = "modules/sentry-native/install/bin"
-
-    if platform == "windows":
-        copy_file_action(
-            File(f"{target_dir}/crashpad_handler.exe"),
-            File(f"{source_dir}/crashpad_handler.exe")
-        )
-        copy_file_action(
-            File(f"{target_dir}/crashpad_handler.pdb"),
-            File(f"{source_dir}/crashpad_handler.pdb")
-        )
-    else:
-        copy_file_action(
-            File(f"{target_dir}/crashpad_handler"),
-            File(f"{source_dir}/crashpad_handler")
-        )
-
-    deploy_crashpad_handler = env.Command(sn_targets, sn_sources, sn_actions)
+    # Deploy crashpad handler to project directory.
+    target_dir = Dir(BIN_DIR + "/" + platform)
+    deploy_crashpad_handler = env.CopyCrashpadHandler(target_dir)
     Default(deploy_crashpad_handler)
 
 
