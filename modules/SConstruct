@@ -106,7 +106,6 @@ cmake_gen += " -DCMAKE_BUILD_TYPE=RelWithDebInfo"
 
 if platform == "windows":
     cmake_gen += " -DSENTRY_BUILD_RUNTIMESTATIC=ON"
-    cmake_gen += ' -DCMAKE_COMPILE_PDB_OUTPUT_DIRECTORY="pdb"'
     if arch == "x86_32":
         cmake_arch = "-A Win32"
     elif arch == "x86_64":
