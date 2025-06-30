@@ -4,7 +4,7 @@
 import os
 
 
-# *** Prologue: Initialization 
+# *** Prologue: Initialization
 
 try:
     Import("env")
@@ -20,12 +20,12 @@ if not platform:
     print("ERROR: Platform not specified. Use platform=<platform> argument.")
     Exit(1)
 
+if platform not in ["windows", "linux", "macos"]:
+    Return("env")
+
 if not arch:
     print("ERROR: Architecture not specified. Use arch=<arch> argument.")
     Exit(1)
-
-if platform not in ["windows", "linux", "macos"]:
-    Return("env")
 
 if env.get("use_mingw") == True:
     print("ERROR: Compiling with MinGW is not supported yet.")
